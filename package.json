@@ -1,0 +1,15 @@
+{
+  "name": "koa-bullmq-admin-middleware",
+  "version": "1.0.0",
+  "description": "Koa 2 middleware to interact with the BullMQ message queue",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "koa",
+    "bullmq"
+  ],
+  "author": "Soma Erdelyi <info@somaerdelyi.net> (https://somaerdelyi.net/)",
+  "license": "MIT"
+}
