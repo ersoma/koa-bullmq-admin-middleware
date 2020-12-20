@@ -4,12 +4,21 @@
   "description": "Koa 2 middleware to interact with the BullMQ message queue",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npm run test:unit && npm run test:e2e",
+    "test:e2e": "mocha ./test/mocha.config.js \"./test/e2e/**/*.js\"",
+    "test:unit": "mocha ./test/mocha.config.js \"./test/**/*.spec.js\""
   },
   "keywords": [
     "koa",
     "bullmq"
   ],
   "author": "Soma Erdelyi <info@somaerdelyi.net> (https://somaerdelyi.net/)",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "mocha": "^8.2.1",
+    "sinon": "^9.2.2",
+    "sinon-chai": "^3.5.0"
+  }
 }
