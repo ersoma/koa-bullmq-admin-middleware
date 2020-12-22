@@ -20,6 +20,7 @@
     "bullmq": "^1.12.1"
   },
   "devDependencies": {
+    "bullmq": "^1.12.1",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "eslint": "^7.16.0",
