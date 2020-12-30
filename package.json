@@ -24,6 +24,7 @@
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "eslint": "^7.16.0",
+    "eslint-plugin-chai-friendly": "^0.6.0",
     "eslint-plugin-no-only-tests": "^2.4.0",
     "eslint-plugin-require-path-exists": "^1.1.9",
     "mocha": "^8.2.1",
