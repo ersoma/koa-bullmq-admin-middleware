@@ -7,7 +7,10 @@ const ParameterError = require('../parameter-error');
 class GetQueueDetailsMiddleware {
   constructor(queues, {
     getQueue = (ctx, queues) => queues.find(q => ctx.params.queueName === q.name),
-    storeResult = (ctx, result) => ctx.state.bullMqAdmin.queueDetails = result
+    storeResult = (ctx, result) => {
+      ctx.state.bullMqAdmin = ctx.state.bullMqAdmin || {};
+      ctx.state.bullMqAdmin.queueDetails = result;
+    }
   }) {
     this.queues = queues;
     this.getQueue = getQueue;
