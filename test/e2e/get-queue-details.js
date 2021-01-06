@@ -6,7 +6,7 @@ const Router = require('@koa/router');
 
 const FakeServer = require('./fake-server');
 const prepareQueue = require('../prepare-queue');
-const getQueueDetailsFactory = require('../../src/queue/get-queue-details');
+const { getQueueDetailsFactory } = require('../..');
 
 const startServerWith = async (middleware, route, port) => {
   const router = new Router();
