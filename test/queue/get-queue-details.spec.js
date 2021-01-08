@@ -2,7 +2,6 @@
 
 const Queue = require('bullmq').Queue;
 
-const { expect } = require('chai');
 const ParameterError = require('../../src/parameter-error');
 const middlewareFactory = require('../../src/queue/get-queue-details');
 
