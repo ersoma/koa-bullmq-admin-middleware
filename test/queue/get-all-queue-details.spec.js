@@ -2,8 +2,8 @@
 
 const Queue = require('bullmq').Queue;
 
-const ParameterError = require('../../src/parameter-error');
 const middlewareFactory = require('../../src/queue/get-all-queue-details');
+const middlewareTests = require('../middleware/middleware-factory-tests');
 
 describe('getAllQueueDetailsMiddleware', () => {
 
@@ -42,36 +42,17 @@ describe('getAllQueueDetailsMiddleware', () => {
   });
 
   describe('works as a Koa middleware', () => {
-    it('should export a factory function', () => {
-      expect(middlewareFactory).to.be.a('function');
-    });
+    middlewareTests.shouldExportFactoryFunction(middlewareFactory);
 
-    it('should return a function when called', () => {
-      const emptyQueues = [];
-      const middleware = middlewareFactory(emptyQueues);
-      expect(middleware).to.be.a('function');
-    });
+    middlewareTests.shouldReturnFunctionWhenCalled(middlewareFactory);
 
-    it('should throw an error if required queues parameter is missing for factory', () => {
-      expect(middlewareFactory).to.throw(ParameterError, 'queues parameter is required');
-    });
+    middlewareTests.shouldThrowErrorQueueParameterMissing(middlewareFactory);
 
-    it('should throw an error if required queues parameter is not an array for factory', () => {
-      const shouldThrow = () => middlewareFactory('not array');
-      expect(shouldThrow).to.throw(ParameterError, 'queues parameter must be an array');
-    });
+    middlewareTests.shouldThrowErrorQueueParameterNotArray(middlewareFactory);
 
-    it('should throw an error if members of the queues parameter are not BullMQ queues', () => {
-      const shouldThrow = () => middlewareFactory(['not a Queue']);
-      expect(shouldThrow).to.throw(ParameterError, 'items in the queues parameter must be BullMQ Queues');
-    });
+    middlewareTests.shouldThrowErrorQueueParameterMembersNotBullMq(middlewareFactory);
 
-    it('should throw an error if optional storeResult parameter is not a function', () => {
-      const shouldThrow = () => middlewareFactory([], {
-        storeResult: 'not a function'
-      });
-      expect(shouldThrow).to.throw(ParameterError, 'storeResult parameter must be a function');
-    });
+    middlewareTests.shouldThrowErrorOptionalParameterNotFunction(middlewareFactory, 'storeResult');
   });
 
   describe('works with default parameters', () => {
