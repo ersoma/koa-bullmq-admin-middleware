@@ -1,8 +1,6 @@
 'use strict';
 
-const { Queue } = require('bullmq');
-
-const ParameterError = require('../parameter-error');
+const parameterValidator = require('../parameter-validator');
 const getQueueDetailsFactory = require('./get-queue-details');
 
 class GetAllQueueDetailsMiddleware {
@@ -35,21 +33,8 @@ class GetAllQueueDetailsMiddleware {
   }
 
   _validateParameters() {
-    if (!this.queues) {
-      throw new ParameterError('queues parameter is required');
-    }
-
-    if (Array.isArray(this.queues) === false) {
-      throw new ParameterError('queues parameter must be an array');
-    }
-
-    if (this.queues.every(i => i instanceof Queue) === false) {
-      throw new ParameterError('items in the queues parameter must be BullMQ Queues');
-    }
-
-    if (this.storeResult instanceof Function === false) {
-      throw new ParameterError('storeResult parameter must be a function');
-    }
+    parameterValidator.queues(this.queues);
+    parameterValidator.optionalFunction(this.storeResult, 'storeResult');
   }
 }
 
