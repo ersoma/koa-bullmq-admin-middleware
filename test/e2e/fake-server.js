@@ -1,6 +1,7 @@
 'use strict';
 
 const Koa = require('koa');
+const Router = require('@koa/router');
 const bodyParser = require('koa-bodyparser');
 
 const PORT = 8080;
@@ -8,12 +9,17 @@ const BASE_URL = `http://localhost:${PORT}`;
 
 class FakeServer {
   constructor(
+    route = '/',
     middlewares = [],
-    controller = ctx => { ctx.status = 200; }
+    controller = ctx => ctx.body = ctx.state.bullMqAdmin
   ) {
     const app = new Koa();
+    const router = new Router();
+
+    router.get(route, this._errorHandler, middlewares);
+
     app.use(bodyParser());
-    middlewares.forEach(middleware => app.use(middleware));
+    app.use(router.routes());
     app.use(controller);
     app.silent = true;
     this.app = app;
@@ -34,6 +40,14 @@ class FakeServer {
 
   get baseUrl() {
     return BASE_URL;
+  }
+
+  async _errorHandler(ctx, next) {
+    try {
+      await next();
+    } catch (err) {
+      console.log(err);
+    }
   }
 }
 

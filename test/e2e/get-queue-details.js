@@ -2,21 +2,14 @@
 
 const axios = require('axios');
 const { Queue } = require('bullmq');
-const Router = require('@koa/router');
 
 const FakeServer = require('./fake-server');
 const prepareQueue = require('../prepare-queue');
 const { getQueueDetailsFactory } = require('../..');
 
 const startServerWith = async (middleware, route) => {
-  const router = new Router();
-  router.get(route,
-    async (ctx, next) => { try { await next(); } catch (err) { console.log(err); } },
-    middleware, ctx => ctx.body = ctx.state.bullMqAdmin);
-
-  const server = new FakeServer([router.routes()]);
+  const server = new FakeServer(route, middleware);
   await server.startFakeServer();
-
   return server;
 };
 
