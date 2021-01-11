@@ -8,21 +8,19 @@ const FakeServer = require('./fake-server');
 const prepareQueue = require('../prepare-queue');
 const getAllQueueDetailsFactory = require('../../src/queue/get-all-queue-details');
 
-const startServerWith = async (middleware, route, port) => {
+const startServerWith = async (middleware, route) => {
   const router = new Router();
   router.get(route,
     async (ctx, next) => { try { await next(); } catch (err) { console.log(err); } },
     middleware, ctx => ctx.body = ctx.state.bullMqAdmin);
 
   const server = new FakeServer([router.routes()]);
-  await server.startFakeServer(port);
+  await server.startFakeServer();
 
   return server;
 };
 
 describe('Tests getAllQueueDetails middleware', () => {
-  const PORT = 8080;
-  const BASE_URL = `http://localhost:${PORT}`;
   let queues = [
     new Queue('test-1'),
     new Queue('test-2')
@@ -77,9 +75,9 @@ describe('Tests getAllQueueDetails middleware', () => {
       await prepareQueue.setQueueJobs(queues[0], true, expectedQueueCountsForQueue1);
       await prepareQueue.setQueueJobs(queues[1], false, expectedQueueCountsForQueue2);
       const middleware = getAllQueueDetailsFactory(queues);
-      server = await startServerWith(middleware, '/', PORT);
+      server = await startServerWith(middleware, '/');
 
-      const response = await axios.get(`${BASE_URL}/`);
+      const response = await axios.get(`${server.baseUrl}/`);
 
       expect(response.data.allQueueDetails).to.be.eql(expectedBody);
     });
@@ -95,9 +93,9 @@ describe('Tests getAllQueueDetails middleware', () => {
           ctx.state.bullMqAdmin.allQueueDetailsCustom = result;
         }
       });
-      server = await startServerWith(middleware, '/', PORT);
+      server = await startServerWith(middleware, '/');
 
-      const response = await axios.get(`${BASE_URL}/`);
+      const response = await axios.get(`${server.baseUrl}/`);
 
       expect(response.data.allQueueDetailsCustom).to.be.eql(expectedBody);
     });

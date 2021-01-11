@@ -3,6 +3,9 @@
 const Koa = require('koa');
 const bodyParser = require('koa-bodyparser');
 
+const PORT = 8080;
+const BASE_URL = `http://localhost:${PORT}`;
+
 class FakeServer {
   constructor(
     middlewares = [],
@@ -16,10 +19,10 @@ class FakeServer {
     this.app = app;
   }
 
-  startFakeServer(port) {
+  startFakeServer() {
     this.stopFakeServer();
     return new Promise(resolve => {
-      this.server = this.app.listen(port, '0.0.0.0', () => resolve());
+      this.server = this.app.listen(PORT, '0.0.0.0', () => resolve());
     });
   }
 
@@ -27,6 +30,10 @@ class FakeServer {
     if (this.server) {
       this.server.close();
     }
+  }
+
+  get baseUrl() {
+    return BASE_URL;
   }
 }
 

@@ -8,21 +8,19 @@ const FakeServer = require('./fake-server');
 const prepareQueue = require('../prepare-queue');
 const { getQueueDetailsFactory } = require('../..');
 
-const startServerWith = async (middleware, route, port) => {
+const startServerWith = async (middleware, route) => {
   const router = new Router();
   router.get(route,
     async (ctx, next) => { try { await next(); } catch (err) { console.log(err); } },
     middleware, ctx => ctx.body = ctx.state.bullMqAdmin);
 
   const server = new FakeServer([router.routes()]);
-  await server.startFakeServer(port);
+  await server.startFakeServer();
 
   return server;
 };
 
 describe('Tests getQueueDetails middleware', () => {
-  const PORT = 8080;
-  const BASE_URL = `http://localhost:${PORT}`;
   let queues = [new Queue('test')];
   let server;
   const expectedQueueCounts = {
@@ -55,9 +53,9 @@ describe('Tests getQueueDetails middleware', () => {
     it('shoud respond proper number of jobs', async () => {
       await prepareQueue.setQueueJobs(queues[0], true, expectedQueueCounts);
       const middleware = getQueueDetailsFactory(queues);
-      server = await startServerWith(middleware, '/:queueName', PORT);
+      server = await startServerWith(middleware, '/:queueName');
 
-      const response = await axios.get(`${BASE_URL}/${queues[0].name}`);
+      const response = await axios.get(`${server.baseUrl}/${queues[0].name}`);
 
       expect(response.data.queueDetails).to.be.eql(expectedBody);
     });
@@ -69,9 +67,9 @@ describe('Tests getQueueDetails middleware', () => {
       const middleware = getQueueDetailsFactory(queues, {
         getQueue: (ctx, queues) => queues.find(q => ctx.headers['queue-name'] === q.name)
       });
-      server = await startServerWith(middleware, '/', PORT);
+      server = await startServerWith(middleware, '/');
 
-      const response = await axios.get(BASE_URL + '/', {
+      const response = await axios.get(server.baseUrl + '/', {
         headers: { 'queue-name': 'test' }
       });
 
@@ -88,9 +86,9 @@ describe('Tests getQueueDetails middleware', () => {
           ctx.state.bullMqAdmin.queueDetailsCustom = result;
         }
       });
-      server = await startServerWith(middleware, '/:queueName', PORT);
+      server = await startServerWith(middleware, '/:queueName');
 
-      const response = await axios.get(`${BASE_URL}/${queues[0].name}`);
+      const response = await axios.get(`${server.baseUrl}/${queues[0].name}`);
 
       expect(response.data.queueDetailsCustom).to.be.eql(expectedBody);
     });
