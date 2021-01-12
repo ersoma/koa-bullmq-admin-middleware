@@ -2,7 +2,7 @@
 
 const Queue = require('bullmq').Queue;
 
-const middlewareFactory = require('../../src/queue/get-all-queue-details');
+const middlewareFactory = require('../..').getAllQueueDetailsFactory;
 const middlewareTests = require('../middleware/middleware-factory-tests');
 
 describe('getAllQueueDetailsMiddleware', () => {
