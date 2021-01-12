@@ -7,12 +7,6 @@ const FakeServer = require('./fake-server');
 const prepareQueue = require('../prepare-queue');
 const { getQueueDetailsFactory } = require('../..');
 
-const startServerWith = async (middleware, route) => {
-  const server = new FakeServer(route, middleware);
-  await server.startFakeServer();
-  return server;
-};
-
 describe('Tests getQueueDetails middleware', () => {
   let queues = [new Queue('test')];
   let server;
@@ -46,7 +40,9 @@ describe('Tests getQueueDetails middleware', () => {
     it('shoud respond proper number of jobs', async () => {
       await prepareQueue.setQueueJobs(queues[0], true, expectedQueueCounts);
       const middleware = getQueueDetailsFactory(queues);
-      server = await startServerWith(middleware, '/:queueName');
+
+      server = new FakeServer('/:queueName', middleware);
+      await server.startFakeServer();
 
       const response = await axios.get(`${server.baseUrl}/${queues[0].name}`);
 
@@ -60,7 +56,9 @@ describe('Tests getQueueDetails middleware', () => {
       const middleware = getQueueDetailsFactory(queues, {
         getQueue: (ctx, queues) => queues.find(q => ctx.headers['queue-name'] === q.name)
       });
-      server = await startServerWith(middleware, '/');
+
+      server = new FakeServer('/', middleware);
+      await server.startFakeServer();
 
       const response = await axios.get(server.baseUrl + '/', {
         headers: { 'queue-name': 'test' }
@@ -79,7 +77,9 @@ describe('Tests getQueueDetails middleware', () => {
           ctx.state.bullMqAdmin.queueDetailsCustom = result;
         }
       });
-      server = await startServerWith(middleware, '/:queueName');
+
+      server = new FakeServer('/:queueName', middleware);
+      await server.startFakeServer();
 
       const response = await axios.get(`${server.baseUrl}/${queues[0].name}`);
 
