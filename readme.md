@@ -12,21 +12,68 @@ npm i bullmq
 npm i koa-bullmq-admin-middleware
 ```
 
+## Get All Queue Details
+
+Collects basic information about all the queues, like their name, if they're paused or not and the number of jobs for each state.
+
+```JavaScript
+const result = [{
+  name: String,           // queue's name
+  isPaused: Boolean,      // queue is paused or not
+  activeCount: Number,    // number of active jobs
+  completedCount: Number, // number of completed jobs
+  delayedCount: Number,   // number of delayed jobs
+  failedCount: Number,    // number of failed jobs
+  waitingCount: Number    // number of waiting jobs
+}];
+```
+
+<details><summary>Show details</summary>
+<p>
+
+Throws `ParameterError` when:
+- queues parameter is not set, not an array or members are not BullMQ Queues
+- storeResult parameter not a function, when set
+
+### Example
+
+```JavaScript
+//...
+const { getAllQueueDetailsFactory } = require('koa-bullmq-admin-middleware');
+///...
+const getAllQueueDetailsMiddleware = getAllQueueDetailsFactory(queues, {
+  storeResult = (ctx, result) => {...}
+});
+app.use(getAllQueueDetailsMiddleware);
+///...
+```
+
+### Parameters
+
+Parameter | Required | Type | Description
+--- | --- | --- | ---
+queues | yes | Array | BullMQ queues
+config | no | Object | config parameters | -
+config.storeResult | no | Function(ctx, result) => undefined | By default result will be saved to `ctx.state.bullMqAdmin.allQueueDetails`
+
+</p>
+</details>
+
 ## Get Queue Details
 
 Collects basic information about a queue, like it's name, if it's paused or not and the number of jobs for each state.
 
- ```JavaScript
- const result = {
-    name: String,           // queue's name
-    isPaused: Boolean,      // queue is paused or not
-    activeCount: Number,    // number of active jobs
-    completedCount: Number, // number of completed jobs
-    delayedCount: Number,   // number of delayed jobs
-    failedCount: Number,    // number of failed jobs
-    waitingCount: Number    // number of waiting jobs
-  };
- ```
+```JavaScript
+const result = {
+  name: String,           // queue's name
+  isPaused: Boolean,      // queue is paused or not
+  activeCount: Number,    // number of active jobs
+  completedCount: Number, // number of completed jobs
+  delayedCount: Number,   // number of delayed jobs
+  failedCount: Number,    // number of failed jobs
+  waitingCount: Number    // number of waiting jobs
+};
+```
 
 <details><summary>Show details</summary>
 <p>
