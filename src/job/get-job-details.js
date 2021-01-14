@@ -5,27 +5,30 @@ const { Queue, Job } = require('bullmq');
 const ParameterError = require('../parameter-error');
 const parameterValidator = require('../parameter-validator');
 
-module.exports = (queues, {
-  getQueue = (ctx, queues) => queues.find(q => ctx.params.queueName === q.name),
-  getJob = (ctx, queue) => queue.getJob(ctx.params.jobId),
-  storeResult = (ctx, result) => {
-    ctx.state.bullMqAdmin = ctx.state.bullMqAdmin || {};
-    ctx.state.bullMqAdmin.jobDetails = result;
-  }
-} = {}) => {
-  parameterValidator.queues(queues);
-  parameterValidator.optionalFunction(getQueue, 'getQueue');
-  parameterValidator.optionalFunction(getJob, 'getJob');
-  parameterValidator.optionalFunction(storeResult, 'storeResult');
+class GetJobDetailsMiddleware {
+  constructor(queues, {
+    getQueue = (ctx, queues) => queues.find(q => ctx.params.queueName === q.name),
+    getJob = (ctx, queue) => queue.getJob(ctx.params.jobId),
+    storeResult = (ctx, result) => {
+      ctx.state.bullMqAdmin = ctx.state.bullMqAdmin || {};
+      ctx.state.bullMqAdmin.jobDetails = result;
+    }
+  }) {
+    this.queues = queues;
+    this.getQueue = getQueue;
+    this.getJob = getJob;
+    this.storeResult = storeResult;
 
-  return async (ctx, next) => {
-    const queue = getQueue(ctx, queues);
+    this._validateParameters();
+  }
+
+  async execute(ctx, next) {
+    const queue = this.getQueue(ctx, this.queues);
     if (queue instanceof Queue === false) {
       throw new ParameterError('queue not found');
     }
 
-    const job = await getJob(ctx, queue);
-
+    const job = await this.getJob(ctx, queue);
     if (job instanceof Job === false) {
       throw new ParameterError('job not found');
     }
@@ -34,8 +37,20 @@ module.exports = (queues, {
       ...job.asJSON(),
       state: await job.getState()
     };
-    storeResult(ctx, result);
+    this.storeResult(ctx, result);
 
     await next();
-  };
+  }
+
+  _validateParameters() {
+    parameterValidator.queues(this.queues);
+    parameterValidator.optionalFunction(this.getQueue, 'getQueue');
+    parameterValidator.optionalFunction(this.getJob, 'getJob');
+    parameterValidator.optionalFunction(this.storeResult, 'storeResult');
+  }
+}
+
+module.exports = (queues, config = {}) => {
+  const instance = new GetJobDetailsMiddleware(queues, config);
+  return async (ctx, next) => instance.execute(ctx, next);
 };
