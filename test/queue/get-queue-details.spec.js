@@ -66,7 +66,7 @@ describe('getQueueDetailsMiddleware', () => {
         }
       };
 
-      expect(middleware(fakeCtx, null)).to.be.rejectedWith(ParameterError, 'queue not found');
+      await expect(middleware(fakeCtx, null)).to.be.rejectedWith(ParameterError, 'queue not found');
     });
 
     it('should call next if queue is found', async () => {
@@ -130,7 +130,7 @@ describe('getQueueDetailsMiddleware', () => {
         }
       };
 
-      expect(middleware(fakeCtx, null)).to.be.rejectedWith(ParameterError, 'queue not found');
+      await expect(middleware(fakeCtx, null)).to.be.rejectedWith(ParameterError, 'queue not found');
     });
 
     it('should set the details in default location', async () => {
