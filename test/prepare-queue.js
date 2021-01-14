@@ -75,6 +75,17 @@ const setQueueJobs = async (queue, isPaused, {
   await worker.close(true);
 };
 
+const setWaitingJob = async (queue, jobData = {}, jobSettings = {}) => {
+  await waitLockDuration();
+  await clearQueue(queue);
+  await queue.resume();
+
+  const job = queue.add('job-waiting', jobData, jobSettings);
+
+  return job;
+};
+
 module.exports = {
-  setQueueJobs
+  setQueueJobs,
+  setWaitingJob
 };
