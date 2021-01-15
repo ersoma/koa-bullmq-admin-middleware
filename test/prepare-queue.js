@@ -75,17 +75,44 @@ const setQueueJobs = async (queue, isPaused, {
   await worker.close(true);
 };
 
-const setWaitingJob = async (queue, jobData = {}, jobSettings = {}) => {
+const setJob = async (queue, status, jobData = {}) => {
+  const worker = new Worker(queue.name, null, { lockDuration: LOCK_DURATION });
+
   await waitLockDuration();
   await clearQueue(queue);
   await queue.resume();
+  let job;
 
-  const job = queue.add('job-waiting', jobData, jobSettings);
+  switch (status) {
+    case 'waiting':
+      job = queue.add('job-waiting', jobData);
+      break;
+    case 'delayed':
+      job = queue.add('job-delayed', jobData, { delay: 1 });
+      break;
+    case 'active':
+      await queue.add('job-active', jobData);
+      job = await worker.getNextJob(TOKEN);
+      break;
+    case 'failed':
+      await queue.add('job-failed', jobData);
+      job = await worker.getNextJob(TOKEN);
+      await job.moveToFailed(new Error('Failed job for testing'), TOKEN, false);
+      break;
+    case 'completed':
+      await queue.add('job-completed', jobData);
+      job = await worker.getNextJob(TOKEN);
+      await job.moveToCompleted({}, TOKEN, false);
+      break;
+    default:
+      throw new Error('Invalid status');
+  }
 
+  await worker.close(true);
   return job;
 };
 
 module.exports = {
   setQueueJobs,
-  setWaitingJob
+  setJob
 };

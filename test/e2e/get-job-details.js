@@ -13,10 +13,10 @@ describe('Tests getJobDetails middleware', () => {
   let server;
 
   const testData = { key: 'value' };
-  const getExpectedBody = async (jobId, status) => {
+  const getExpectedBody = async (jobId, state) => {
     const job = await selectedQueue.getJob(jobId);
     const jobJson = job.asJSON();
-    const expectedBody = {
+    const bodyWithAllKeys = {
       id: jobJson.id,
       name: jobJson.name,
       attemptsMade: jobJson.attemptsMade,
@@ -25,10 +25,19 @@ describe('Tests getJobDetails middleware', () => {
       progress: jobJson.progress,
       returnvalue: jobJson.returnvalue,
       stacktrace: jobJson.stacktrace,
-      state: status,
-      timestamp: jobJson.timestamp
+      state,
+      timestamp: jobJson.timestamp,
+      failedReason: jobJson.failedReason,
+      finishedOn: jobJson.finishedOn,
+      processedOn: jobJson.processedOn
     };
-    return expectedBody;
+    const filteredBody = {};
+    Object.keys(bodyWithAllKeys).forEach(k => {
+      if (typeof bodyWithAllKeys[k] !== 'undefined') {
+        filteredBody[k] = bodyWithAllKeys[k];
+      }
+    });
+    return filteredBody;
   };
 
   afterEach(async () => {
@@ -41,23 +50,30 @@ describe('Tests getJobDetails middleware', () => {
   });
 
   describe('with default parameters', () => {
-    it('shoud respond proper job details object', async () => {
-      const job = await prepareQueue.setWaitingJob(selectedQueue, testData);
-      const middleware = getJobDetailsFactory(queues);
+    [
+      'waiting',
+      'delayed',
+      'failed',
+      'completed',
+      'active'
+    ].forEach(state => {
+      it(`shoud respond proper job details object for ${state} job`, async () => {
+        const job = await prepareQueue.setJob(selectedQueue, state, testData);
+        const middleware = getJobDetailsFactory(queues);
 
-      server = new FakeServer('/:queueName/:jobId', middleware);
-      await server.startFakeServer();
+        server = new FakeServer('/:queueName/:jobId', middleware);
+        await server.startFakeServer();
+        const response = await axios.get(`${server.baseUrl}/${selectedQueue.name}/${job.id}`);
 
-      const response = await axios.get(`${server.baseUrl}/${selectedQueue.name}/${job.id}`);
-
-      const expectedBody = await getExpectedBody(job.id, 'waiting');
-      expect(response.data.jobDetails).to.be.eql(expectedBody);
+        const expectedBody = await getExpectedBody(job.id, state);
+        expect(response.data.jobDetails).to.be.eql(expectedBody);
+      });
     });
   });
 
   describe('with custom getQueue parameter', () => {
     it('shoud respond proper job details object', async () => {
-      const job = await prepareQueue.setWaitingJob(selectedQueue, testData);
+      const job = await prepareQueue.setJob(selectedQueue, 'waiting', testData);
       const middleware = getJobDetailsFactory(queues, {
         getQueue: (ctx, queues) => queues.find(q => ctx.headers['queue-name'] === q.name)
       });
@@ -76,7 +92,7 @@ describe('Tests getJobDetails middleware', () => {
 
   describe('with custom getJob parameter', () => {
     it('shoud respond proper job details object', async () => {
-      const job = await prepareQueue.setWaitingJob(selectedQueue, testData);
+      const job = await prepareQueue.setJob(selectedQueue, 'waiting', testData);
       const middleware = getJobDetailsFactory(queues, {
         getJob: (ctx, queue) => queue.getJob(ctx.headers['job-id'])
       });
@@ -95,7 +111,7 @@ describe('Tests getJobDetails middleware', () => {
 
   describe('with custom storeResult parameter', () => {
     it('shoud respond proper job details object', async () => {
-      const job = await prepareQueue.setWaitingJob(selectedQueue, testData);
+      const job = await prepareQueue.setJob(selectedQueue, 'waiting', testData);
       const middleware = getJobDetailsFactory(queues, {
         storeResult: (ctx, result) => {
           ctx.state.bullMqAdmin = ctx.state.bullMqAdmin || {};
