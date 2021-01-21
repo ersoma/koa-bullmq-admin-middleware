@@ -107,3 +107,62 @@ config.storeResult | no | Function(ctx, result) => undefined | By default result
 
 </p>
 </details>
+
+## Get Job Details
+
+Collects information about a job by merging the results of it's `toJSON` and `getState` functions into one.
+
+```JavaScript
+// Soma properties are only available on certain states
+// check BullMQ's documentation for more details
+const result = {
+  name: String,             // job's name
+  id: String,               // job's id
+  attemptsMade: Number,     // job's attemps
+  data: JSON,               // job's data
+  opts: JSON,               // job's options
+  progress: Number | JSON   // job's progress if updated
+  returnvalue: JSON         // job's return value when completed
+  stacktrace: JSON          // job's stacktrace when it failed
+  failedReason: JSON,       // job's reason when it failed
+  timestamp: Number,        // job's timestamp when created
+  processedOn: Number,      // job's time when processedd
+  finishedOn: Number,       // job's time when finished
+  state: String,            // job's state
+};
+```
+
+<details><summary>Show details</summary>
+<p>
+
+Throws `ParameterError` when:
+- queues parameter is not set, not an array or members are not BullMQ Queues
+- getQueue, getJob or storeResult parameter not a function, when set
+
+### Example
+
+```JavaScript
+//...
+const { getJobDetailsFactory } = require('koa-bullmq-admin-middleware');
+///...
+const getJobDetailsMiddleware = getJobDetailsFactory(queues, {
+  getQueue = (ctx, queues) => {...},
+  getJob = async (ctx, queues) => {...},
+  storeResult = (ctx, result) => {...}
+});
+app.use(getJobDetailsMiddleware);
+///...
+```
+
+### Parameters
+
+Parameter | Required | Type | Description
+--- | --- | --- | ---
+queues | yes | Array | BullMQ queues
+config | no | Object | config parameters | -
+config.getQueue | no | Function(ctx, queues) => Queue | By default `ctx.params.queueName` will be used
+config.getJob | no | async Function(ctx, queues) => Job | By default `ctx.params.jobId` will be used
+config.storeResult | no | Function(ctx, result) => undefined | By default result will be saved to `ctx.state.bullMqAdmin.jobDetails`
+
+</p>
+</details>
