@@ -110,7 +110,7 @@ config.storeResult | no | Function(ctx, result) => undefined | By default result
 
 ## Get Job Details
 
-Collects information about a job by merging the results of it's `toJSON` and `getState` functions into one.
+Collects information about a job by merging the results of it's `asJSON` and `getState` functions into one.
 
 ```JavaScript
 // Soma properties are only available on certain states
