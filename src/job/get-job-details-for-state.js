@@ -82,6 +82,15 @@ module.exports = (queues, {
     }
 
     const pagination = getPagination(ctx);
+    if (typeof pagination !== 'object' || pagination === null) {
+      throw new ParameterError('getPagination must return an object');
+    }
+    if (typeof pagination.pageSize !== 'number') {
+      throw new ParameterError('pagination.pageSize must be a number');
+    }
+    if (typeof pagination.start !== 'number') {
+      throw new ParameterError('pagination.start must be a number');
+    }
 
     const end = pagination.start + pagination.pageSize - 1;
     const jobs = await jobGetters[state].list(pagination.start, end);

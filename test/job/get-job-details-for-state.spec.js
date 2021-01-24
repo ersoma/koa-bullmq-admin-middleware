@@ -241,4 +241,158 @@ describe('getJobDetailsForStateMiddleware', () => {
     });
   });
 
+  describe('works with custom getQueue parameter', () => {
+    it('should throw an error if getQueue does not return a BullMQ queue instance', async () => {
+      const middleware = middlewareFactory([queue], {
+        getQueue: () => {}
+      });
+      const fakeCtx = {
+        params: {}
+      };
+
+      await expect(middleware(fakeCtx, null)).to.be.rejectedWith(ParameterError, 'queue not found');
+    });
+
+    it('should set the details in default location', async () => {
+      const middleware = middlewareFactory([queue], {
+        getQueue: (ctx, queues) => queues.find(q => ctx.state.queueCustomName === q.name)
+      });
+      const fakeCtx = {
+        params: {
+          queueName: queue.name,
+          state: 'waiting'
+        },
+        query: {},
+        state: {
+          queueCustomName: queue.name
+        }
+      };
+
+      await middleware(fakeCtx, fakeNext);
+
+      expect(fakeCtx.state.bullMqAdmin).to.be.eql(getExpectedResult(job));
+    });
+  });
+
+  describe('works with custom getState parameter', () => {
+    it('should throw an error if getQueue does not return a BullMQ queue instance', async () => {
+      const middleware = middlewareFactory([queue], {
+        getState: () => {}
+      });
+      const fakeCtx = {
+        params: {
+          queueName: queue.name
+        }
+      };
+
+      await expect(middleware(fakeCtx, null)).to.be.rejectedWith(ParameterError, 'state is invalid');
+    });
+
+    it('should set the details in default location', async () => {
+      const middleware = middlewareFactory([queue], {
+        getState: ctx => ctx.state.customStateName
+      });
+      const fakeCtx = {
+        params: {
+          queueName: queue.name
+        },
+        query: {},
+        state: {
+          customStateName: 'waiting'
+        }
+      };
+
+      await middleware(fakeCtx, fakeNext);
+
+      expect(fakeCtx.state.bullMqAdmin).to.be.eql(getExpectedResult(job));
+    });
+  });
+
+  describe('works with custom getPagination parameter', () => {
+    it('should throw error if pagination does\'t return an object', async () => {
+      const middleware = middlewareFactory([queue], {
+        getPagination: () => 'pagination'
+      });
+      const fakeCtx = {
+        params: {
+          queueName: queue.name,
+          state: 'waiting'
+        }
+      };
+
+      const errorMessage = 'getPagination must return an object';
+      await expect(middleware(fakeCtx, null)).to.be.rejectedWith(ParameterError, errorMessage);
+    });
+
+    [
+      'pageSize',
+      'start'
+    ].forEach(key =>
+      it(`should throw error if pagination has missing ${key} key`, async () => {
+        const pagination = {
+          pageSize: 10,
+          start: 0
+        };
+        delete pagination[key];
+        const middleware = middlewareFactory([queue], {
+          getPagination: () => pagination
+        });
+        const fakeCtx = {
+          params: {
+            queueName: queue.name,
+            state: 'waiting'
+          }
+        };
+
+        const errorMessage = `pagination.${key} must be a number`;
+        await expect(middleware(fakeCtx, null)).to.be.rejectedWith(ParameterError, errorMessage);
+      })
+    );
+
+    it('should set the details in default location for not empty state', async () => {
+      const middleware = middlewareFactory([queue], {
+        getPagination: () => ({
+          pageSize: 100,
+          start: 10
+        })
+      });
+      const fakeCtx = {
+        params: {
+          queueName: queue.name,
+          state: 'waiting'
+        },
+        state: {}
+      };
+
+      await middleware(fakeCtx, fakeNext);
+
+      const expectedResult = getExpectedResult(job);
+      expectedResult.pagination.pageSize = 100;
+      expectedResult.pagination.start = 10;
+      expect(fakeCtx.state.bullMqAdmin).to.be.eql(expectedResult);
+    });
+  });
+
+  describe('works with custom storeResult parameter', () => {
+    it('should set the details in custom location', async () => {
+      const middleware = middlewareFactory([queue], {
+        storeResult: (ctx, jobs, pagination) => {
+          ctx.state.jobsDetails = jobs;
+          ctx.state.pagination = pagination;
+        }
+      });
+      const fakeCtx = {
+        params: {
+          queueName: queue.name,
+          state: 'waiting'
+        },
+        query: {},
+        state: {}
+      };
+
+      await middleware(fakeCtx, fakeNext);
+
+      expect(fakeCtx.state).to.be.eql(getExpectedResult(job));
+    });
+  });
 });
