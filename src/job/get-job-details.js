@@ -1,8 +1,5 @@
 'use strict';
 
-const { Queue, Job } = require('bullmq');
-
-const ParameterError = require('../parameter-error');
 const parameterValidator = require('../parameter-validator');
 
 class GetJobDetailsMiddleware {
@@ -24,10 +21,10 @@ class GetJobDetailsMiddleware {
 
   async execute(ctx, next) {
     const queue = this.getQueue(ctx, this.queues);
-    this._validateQueue(queue);
+    parameterValidator.queue(queue);
 
     const job = await this.getJob(ctx, queue);
-    this._validateJob(job);
+    parameterValidator.job(job);
 
     const result = {
       ...job.asJSON(),
@@ -43,18 +40,6 @@ class GetJobDetailsMiddleware {
     parameterValidator.optionalFunction(this.getQueue, 'getQueue');
     parameterValidator.optionalFunction(this.getJob, 'getJob');
     parameterValidator.optionalFunction(this.storeResult, 'storeResult');
-  }
-
-  _validateQueue(queue) {
-    if (queue instanceof Queue === false) {
-      throw new ParameterError('queue not found');
-    }
-  }
-
-  _validateJob(job) {
-    if (job instanceof Job === false) {
-      throw new ParameterError('job not found');
-    }
   }
 }
 

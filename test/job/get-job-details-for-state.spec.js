@@ -344,7 +344,7 @@ describe('getJobDetailsForStateMiddleware', () => {
           }
         };
 
-        const errorMessage = `pagination.${key} must be a number`;
+        const errorMessage = `getPagination\'s ${key} key must be a number`;
         await expect(middleware(fakeCtx, null)).to.be.rejectedWith(ParameterError, errorMessage);
       })
     );

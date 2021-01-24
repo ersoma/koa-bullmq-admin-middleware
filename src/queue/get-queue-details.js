@@ -1,8 +1,5 @@
 'use strict';
 
-const Queue = require('bullmq').Queue;
-
-const ParameterError = require('../parameter-error');
 const parameterValidator = require('../parameter-validator');
 
 class GetQueueDetailsMiddleware {
@@ -22,7 +19,7 @@ class GetQueueDetailsMiddleware {
 
   async execute(ctx, next) {
     const queue = this.getQueue(ctx, this.queues);
-    this._validateQueue(queue);
+    parameterValidator.queue(queue);
 
     const result = await this._getResult(queue);
     this.storeResult(ctx, result);
@@ -34,12 +31,6 @@ class GetQueueDetailsMiddleware {
     parameterValidator.queues(this.queues);
     parameterValidator.optionalFunction(this.getQueue, 'getQueue');
     parameterValidator.optionalFunction(this.storeResult, 'storeResult');
-  }
-
-  _validateQueue(queue) {
-    if (queue instanceof Queue === false) {
-      throw new ParameterError('queue not found');
-    }
   }
 
   async _getResult(queue) {

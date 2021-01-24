@@ -1,8 +1,5 @@
 'use strict';
 
-const { Queue } = require('bullmq');
-
-const ParameterError = require('../parameter-error');
 const parameterValidator = require('../parameter-validator');
 
 class GetJobDetailsForStateMiddleware {
@@ -30,15 +27,15 @@ class GetJobDetailsForStateMiddleware {
 
   async execute(ctx, next) {
     const queue = this.getQueue(ctx, this.queues);
-    this._validateQueue(queue);
+    parameterValidator.queue(queue);
 
     const jobGetters = this._getStateGetters(queue);
 
     const state = this.getState(ctx);
-    this._validateState(state, Object.keys(jobGetters));
+    parameterValidator.stringMemberOfArray(state, Object.keys(jobGetters), 'state');
 
     const pagination = this.getPagination(ctx);
-    this._validatePagination(pagination);
+    parameterValidator.objectWithNumbericKeys(pagination, 'getPagination', ['pageSize', 'start']);
 
     const end = pagination.start + pagination.pageSize - 1;
     const jobs = await jobGetters[state].list(pagination.start, end);
@@ -60,31 +57,6 @@ class GetJobDetailsForStateMiddleware {
     parameterValidator.optionalFunction(this.getState, 'getState');
     parameterValidator.optionalFunction(this.getPagination, 'getPagination');
     parameterValidator.optionalFunction(this.storeResult, 'storeResult');
-  }
-
-  _validateQueue(queue) {
-    if (queue instanceof Queue === false) {
-      throw new ParameterError('queue not found');
-    }
-  }
-
-  _validateState(state, allowedStates) {
-    const stateIsValid = allowedStates.some(v => state === v);
-    if (stateIsValid === false) {
-      throw new ParameterError('state is invalid');
-    }
-  };
-
-  _validatePagination(pagination) {
-    if (typeof pagination !== 'object' || pagination === null) {
-      throw new ParameterError('getPagination must return an object');
-    }
-    if (typeof pagination.pageSize !== 'number') {
-      throw new ParameterError('pagination.pageSize must be a number');
-    }
-    if (typeof pagination.start !== 'number') {
-      throw new ParameterError('pagination.start must be a number');
-    }
   }
 
   _getStateGetters(queue) {
