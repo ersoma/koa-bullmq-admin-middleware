@@ -3,56 +3,80 @@
 const { Queue } = require('bullmq');
 
 const ParameterError = require('../parameter-error');
+const parameterValidator = require('../parameter-validator');
 
-module.exports = (queues, {
-  getQueue = (ctx, queues) => queues.find(q => ctx.params.queueName === q.name),
-  getState = ctx => ctx.params.state,
-  getPagination = ctx => ({
-    pageSize: parseInt(ctx.query['page-size']) || 10,
-    start: parseInt(ctx.query.start) || 0
-  }),
-  storeResult = (ctx, jobs, pagination) => {
-    ctx.state.bullMqAdmin = ctx.state.bullMqAdmin || {};
-    ctx.state.bullMqAdmin.jobsDetails = jobs;
-    ctx.state.bullMqAdmin.pagination = pagination;
-  }
-} = {}) => {
+class GetJobDetailsForStateMiddleware {
+  constructor(queues, {
+    getQueue = (ctx, queues) => queues.find(q => ctx.params.queueName === q.name),
+    getState = ctx => ctx.params.state,
+    getPagination = ctx => ({
+      pageSize: parseInt(ctx.query['page-size']) || 10,
+      start: parseInt(ctx.query.start) || 0
+    }),
+    storeResult = (ctx, jobs, pagination) => {
+      ctx.state.bullMqAdmin = ctx.state.bullMqAdmin || {};
+      ctx.state.bullMqAdmin.jobsDetails = jobs;
+      ctx.state.bullMqAdmin.pagination = pagination;
+    }
+  }) {
+    this.queues = queues;
+    this.getQueue = getQueue;
+    this.getState = getState;
+    this.getPagination = getPagination;
+    this.storeResult = storeResult;
 
-  if (!queues) {
-    throw new ParameterError('queues parameter is required');
-  }
-
-  if (Array.isArray(queues) === false) {
-    throw new ParameterError('queues parameter must be an array');
-  }
-
-  if (queues.every(i => i instanceof Queue) === false) {
-    throw new ParameterError('items in the queues parameter must be BullMQ Queues');
+    this._validateParameters();
   }
 
-  if (getQueue instanceof Function === false) {
-    throw new ParameterError('getQueue parameter must be a function');
-  }
-
-  if (getState instanceof Function === false) {
-    throw new ParameterError('getState parameter must be a function');
-  }
-
-  if (getPagination instanceof Function === false) {
-    throw new ParameterError('getPagination parameter must be a function');
-  }
-
-  if (storeResult instanceof Function === false) {
-    throw new ParameterError('storeResult parameter must be a function');
-  }
-
-  return async (ctx, next) => {
-    const queue = getQueue(ctx, queues);
+  async execute(ctx, next) {
+    const queue = this.getQueue(ctx, this.queues);
     if (queue instanceof Queue === false) {
       throw new ParameterError('queue not found');
     }
 
-    const jobGetters = {
+    const jobGetters = this._getStateGetters(queue);
+
+    const state = this.getState(ctx);
+    const stateIsValid = Object.keys(jobGetters).some(v => state === v);
+    if (stateIsValid === false) {
+      throw new ParameterError('state is invalid');
+    }
+
+    const pagination = this.getPagination(ctx);
+    if (typeof pagination !== 'object' || pagination === null) {
+      throw new ParameterError('getPagination must return an object');
+    }
+    if (typeof pagination.pageSize !== 'number') {
+      throw new ParameterError('pagination.pageSize must be a number');
+    }
+    if (typeof pagination.start !== 'number') {
+      throw new ParameterError('pagination.start must be a number');
+    }
+
+    const end = pagination.start + pagination.pageSize - 1;
+    const jobs = await jobGetters[state].list(pagination.start, end);
+    const jobsJson = jobs.map(job => ({
+      ...job.asJSON(),
+      state
+    }));
+
+    pagination.count = await jobGetters[state].count();
+
+    this.storeResult(ctx, jobsJson, pagination);
+
+    await next();
+  }
+
+  _validateParameters() {
+    parameterValidator.queues(this.queues);
+    parameterValidator.optionalFunction(this.getQueue, 'getQueue');
+    parameterValidator.optionalFunction(this.getState, 'getState');
+    parameterValidator.optionalFunction(this.getPagination, 'getPagination');
+    parameterValidator.optionalFunction(this.storeResult, 'storeResult');
+  }
+
+  _getStateGetters(queue) {
+    return {
       waiting: {
         list: queue.getWaiting.bind(queue),
         count: queue.getWaitingCount.bind(queue)
@@ -74,35 +98,10 @@ module.exports = (queues, {
         count: queue.getFailedCount.bind(queue)
       }
     };
+  }
+}
 
-    const state = getState(ctx);
-    const stateIsValid = Object.keys(jobGetters).some(v => state === v);
-    if (stateIsValid === false) {
-      throw new ParameterError('state is invalid');
-    }
-
-    const pagination = getPagination(ctx);
-    if (typeof pagination !== 'object' || pagination === null) {
-      throw new ParameterError('getPagination must return an object');
-    }
-    if (typeof pagination.pageSize !== 'number') {
-      throw new ParameterError('pagination.pageSize must be a number');
-    }
-    if (typeof pagination.start !== 'number') {
-      throw new ParameterError('pagination.start must be a number');
-    }
-
-    const end = pagination.start + pagination.pageSize - 1;
-    const jobs = await jobGetters[state].list(pagination.start, end);
-    const jobsJson = jobs.map(job => ({
-      ...job.asJSON(),
-      state
-    }));
-
-    pagination.count = await jobGetters[state].count();
-
-    storeResult(ctx, jobsJson, pagination);
-
-    await next();
-  };
+module.exports = (queues, config = {}) => {
+  const instance = new GetJobDetailsForStateMiddleware(queues, config);
+  return async (ctx, next) => instance.execute(ctx, next);
 };
