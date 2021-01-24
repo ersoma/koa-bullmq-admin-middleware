@@ -22,9 +22,7 @@ class GetQueueDetailsMiddleware {
 
   async execute(ctx, next) {
     const queue = this.getQueue(ctx, this.queues);
-    if (queue instanceof Queue === false) {
-      throw new ParameterError('queue not found');
-    }
+    this._validateQueue(queue);
 
     const result = await this._getResult(queue);
     this.storeResult(ctx, result);
@@ -36,6 +34,12 @@ class GetQueueDetailsMiddleware {
     parameterValidator.queues(this.queues);
     parameterValidator.optionalFunction(this.getQueue, 'getQueue');
     parameterValidator.optionalFunction(this.storeResult, 'storeResult');
+  }
+
+  _validateQueue(queue) {
+    if (queue instanceof Queue === false) {
+      throw new ParameterError('queue not found');
+    }
   }
 
   async _getResult(queue) {

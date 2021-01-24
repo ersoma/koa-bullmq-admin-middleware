@@ -24,14 +24,10 @@ class GetJobDetailsMiddleware {
 
   async execute(ctx, next) {
     const queue = this.getQueue(ctx, this.queues);
-    if (queue instanceof Queue === false) {
-      throw new ParameterError('queue not found');
-    }
+    this._validateQueue(queue);
 
     const job = await this.getJob(ctx, queue);
-    if (job instanceof Job === false) {
-      throw new ParameterError('job not found');
-    }
+    this._validateJob(job);
 
     const result = {
       ...job.asJSON(),
@@ -47,6 +43,18 @@ class GetJobDetailsMiddleware {
     parameterValidator.optionalFunction(this.getQueue, 'getQueue');
     parameterValidator.optionalFunction(this.getJob, 'getJob');
     parameterValidator.optionalFunction(this.storeResult, 'storeResult');
+  }
+
+  _validateQueue(queue) {
+    if (queue instanceof Queue === false) {
+      throw new ParameterError('queue not found');
+    }
+  }
+
+  _validateJob(job) {
+    if (job instanceof Job === false) {
+      throw new ParameterError('job not found');
+    }
   }
 }
 
