@@ -2,14 +2,18 @@
 
 const { Worker } = require('bullmq');
 
-const LOCK_DURATION = 200;
 const TOKEN = 'my-token';
 
-const waitLockDuration = async () => new Promise(resolve => setTimeout(resolve, LOCK_DURATION));
-
 const clearQueue = async (queue) => {
-  const allTypes = ['completed', 'wait', 'active', 'paused', 'delayed', 'failed'].map(v => queue.clean(0, 0, v));
-  return Promise.all(allTypes);
+  const allJobs = [
+    ...await queue.getWaiting(0, -1),
+    ...await queue.getActive(0, -1),
+    ...await queue.getDelayed(0, -1),
+    ...await queue.getCompleted(0, -1),
+    ...await queue.getFailed(0, -1)
+  ];
+
+  for await (let job of allJobs) { await job.remove(); }
 };
 
 const addJobs = async (queue, numberOfJobs, jobName, jobData = null, jobSettings = {}) => {
@@ -58,9 +62,8 @@ const setQueueJobs = async (queue, isPaused, {
   waitingCount = 0,
   activeCount = 0
 } = {}) => {
-  const worker = new Worker(queue.name, null, { lockDuration: LOCK_DURATION });
+  const worker = new Worker(queue.name, null);
 
-  await waitLockDuration();
   await clearQueue(queue);
   await queue.resume();
 
@@ -76,9 +79,8 @@ const setQueueJobs = async (queue, isPaused, {
 };
 
 const setJob = async (queue, status, jobData = {}) => {
-  const worker = new Worker(queue.name, null, { lockDuration: LOCK_DURATION });
+  const worker = new Worker(queue.name, null);
 
-  await waitLockDuration();
   await clearQueue(queue);
   await queue.resume();
   let job;
