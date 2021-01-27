@@ -31,7 +31,7 @@ describe('Tests getJobDetails middleware', () => {
   });
 
   let stackTraceLimit;
-  before(()=>{
+  before(() => {
     stackTraceLimit = Error.stackTraceLimit;
     Error.stackTraceLimit = 0;
   });
