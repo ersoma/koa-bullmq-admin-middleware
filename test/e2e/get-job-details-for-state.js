@@ -5,7 +5,7 @@ const { Queue } = require('bullmq');
 
 const FakeServer = require('./fake-server');
 const prepareQueue = require('../prepare-queue');
-const getJobDetailsForStateFactory = require('../../src/job/get-job-details-for-state');
+const { getJobDetailsForStateFactory } = require('../..');
 
 describe('Tests getJobDetailsForState middleware', () => {
   const selectedQueue = new Queue('test');

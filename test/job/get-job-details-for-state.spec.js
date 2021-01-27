@@ -3,7 +3,7 @@
 const { Queue } = require('bullmq');
 
 const ParameterError = require('../../src/parameter-error');
-const middlewareFactory = require('../../src/job/get-job-details-for-state');
+const middlewareFactory = require('../..').getJobDetailsForStateFactory;
 const middlewareTests = require('../middleware/middleware-factory-tests');
 
 describe('getJobDetailsForStateMiddleware', () => {
