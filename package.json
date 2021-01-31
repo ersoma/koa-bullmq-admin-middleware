@@ -17,22 +17,22 @@
   "author": "Soma Erdelyi <info@somaerdelyi.net> (https://somaerdelyi.net/)",
   "license": "MIT",
   "peerDependencies": {
-    "bullmq": "^1.13.0"
+    "bullmq": "^1.14.0"
   },
   "devDependencies": {
     "@koa/router": "^10.0.0",
     "axios": "^0.21.1",
-    "bullmq": "^1.13.0",
+    "bullmq": "^1.14.0",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
-    "eslint": "^7.16.0",
+    "eslint": "^7.19.0",
     "eslint-plugin-chai-friendly": "^0.6.0",
     "eslint-plugin-no-only-tests": "^2.4.0",
     "eslint-plugin-require-path-exists": "^1.1.9",
-    "koa": "^2.13.0",
+    "koa": "^2.13.1",
     "koa-bodyparser": "^4.3.0",
     "mocha": "^8.2.1",
-    "sinon": "^9.2.2",
+    "sinon": "^9.2.4",
     "sinon-chai": "^3.5.0"
   }
 }
