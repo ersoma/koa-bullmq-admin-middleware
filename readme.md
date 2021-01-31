@@ -12,6 +12,12 @@ npm i bullmq
 npm i koa-bullmq-admin-middleware
 ```
 
+Middlewares:
+- [Get All Queue Details](#get-all-queue-details)
+- [Get Queue Details](#get-queue-details)
+- [Get Job Details](#get-job-details)
+- [Get Job Details For State](#get-job-details-for-state)
+
 ## Get All Queue Details
 
 Collects basic information about all the queues, like their name, if they're paused or not and the number of jobs for each state.
@@ -58,6 +64,8 @@ config.storeResult | no | Function(ctx, result) => undefined | By default result
 
 </p>
 </details>
+
+[Back to top](#koa-bullmq-admin-middleware)
 
 ## Get Queue Details
 
@@ -107,6 +115,8 @@ config.storeResult | no | Function(ctx, result) => undefined | By default result
 
 </p>
 </details>
+
+[Back to top](#koa-bullmq-admin-middleware)
 
 ## Get Job Details
 
@@ -166,3 +176,73 @@ config.storeResult | no | Function(ctx, result) => undefined | By default result
 
 </p>
 </details>
+
+[Back to top](#koa-bullmq-admin-middleware)
+
+## Get Job Details For State
+
+Collects information about selection of jobs by merging the results of their `asJSON` function and their state into one. Uses pagination to select only a portion of all jobs.
+
+```JavaScript
+// Soma properties are only available on certain states
+// check BullMQ's documentation for more details
+const jobs = [{
+  name: String,             // job's name
+  id: String,               // job's id
+  attemptsMade: Number,     // job's attemps
+  data: JSON,               // job's data
+  opts: JSON,               // job's options
+  progress: Number | JSON   // job's progress if updated
+  returnvalue: JSON         // job's return value when completed
+  stacktrace: JSON          // job's stacktrace when it failed
+  failedReason: JSON,       // job's reason when it failed
+  timestamp: Number,        // job's timestamp when created
+  processedOn: Number,      // job's time when processedd
+  finishedOn: Number,       // job's time when finished
+  state: String,            // job's state
+}];
+const pagination = {
+  pageSize: Number,         // number of jobs to include
+  start: Number,            // first job's sequantial number to include
+  count: Number             // number of all jobs for the given state
+};
+```
+
+<details><summary>Show details</summary>
+<p>
+
+Throws `ParameterError` when:
+- queues parameter is not set, not an array or members are not BullMQ Queues
+- getQueue, getState, getPagination or storeResult parameter not a function, when set
+
+### Example
+
+```JavaScript
+//...
+const { getJobDetailsForStateFactory } = require('koa-bullmq-admin-middleware');
+///...
+const getJobDetailsForStateMiddleware = getJobDetailsForStateFactory(queues, {
+  getQueue = (ctx, queues) => {...},
+  getState = ctx => {...},
+  getPagination = ctx => {...},
+  storeResult = (ctx, jobs, pagination) => {...}
+});
+app.use(getJobDetailsForStateMiddleware);
+///...
+```
+
+### Parameters
+
+Parameter | Required | Type | Description
+--- | --- | --- | ---
+queues | yes | Array | BullMQ queues
+config | no | Object | config parameters | -
+config.getQueue | no | Function(ctx, queues) => Queue | By default `ctx.params.queueName` will be used
+config.getState | no | Function(ctx) => 'waiting' \| 'active' \| 'delayed' \| 'completed' \| 'failed' | By default `ctx.params.state` will be used
+config.getPagination | no | Function(ctx) => {pageSize: Number, start: Number} | Parameters for pagination. By default first 10 jobs will be listed
+config.storeResult | no | Function(ctx, jobs, pagination) => undefined | By default result will be saved to `ctx.state.bullMqAdmin.jobsDetails` and `ctx.state.bullMqAdmin.pagination`
+
+</p>
+</details>
+
+[Back to top](#koa-bullmq-admin-middleware)
