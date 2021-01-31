@@ -1,6 +1,6 @@
 {
   "name": "koa-bullmq-admin-middleware",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Koa 2 middleware to interact with the BullMQ message queue",
   "main": "index.js",
   "scripts": {
